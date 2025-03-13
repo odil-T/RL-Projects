@@ -1,11 +1,23 @@
 import cv2
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from PIL import Image
 
 
+StateType = Tuple[Tuple[int, int], Tuple[int, int]]
+ActionType = List[float]
+QTableType = Dict[StateType, ActionType]
+
+
 class Environment:
-    def __init__(self, BOARD_SIZE, FOOD_REWARD=1000, ENEMY_PENALTY=-10000, MOVE_PENALTY=-10):
+    def __init__(
+            self,
+            BOARD_SIZE: int,
+            FOOD_REWARD: int = 1000,
+            ENEMY_PENALTY: int = -10000,
+            MOVE_PENALTY: int = -10
+    ):
+
         self.BOARD_SIZE = BOARD_SIZE
         self.FOOD_REWARD = FOOD_REWARD
         self.ENEMY_PENALTY = ENEMY_PENALTY
@@ -33,16 +45,17 @@ class Environment:
         board_array[self.player.y, self.player.x] = self.BLOB_COLORS['player']
         board_array[self.food.y, self.food.x] = self.BLOB_COLORS['food']
         board_array[self.enemy.y, self.enemy.x] = self.BLOB_COLORS['enemy']
+
         image = Image.fromarray(board_array)
         image = np.array(image.resize((300, 300)))
 
         cv2.imshow('Game', image)
         cv2.waitKey(10)
 
-    def get_state(self) -> Tuple[]:
+    def get_state(self) -> StateType:
         return self.player - self.food, self.player - self.enemy
 
-    def step(self, action):
+    def step(self, action: int) -> Tuple[StateType, int, bool]:
         self.player.move(action)
         new_state = self.get_state()
 
@@ -69,10 +82,10 @@ class Blob():
             if (self.x, self.y) not in blacklisted_coords:
                 break
 
-    def __sub__(self, other: 'Blob'):
+    def __sub__(self, other: 'Blob') -> Tuple[int, int]:
         return self.x - other.x, self.y - other.y
 
-    def move(self, choice):
+    def move(self, choice: int) -> bool:
         if choice == 0:
             self.x += 1
         elif choice == 1:
@@ -84,9 +97,15 @@ class Blob():
 
         if self.x >= self.BOARD_SIZE:
             self.x = self.BOARD_SIZE - 1
+            return True
         if self.x < 0:
             self.x = 0
+            return True
         if self.y >= self.BOARD_SIZE:
             self.y = self.BOARD_SIZE - 1
+            return True
         if self.y < 0:
             self.y = 0
+            return True
+
+        return False
